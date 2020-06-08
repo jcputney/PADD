@@ -435,58 +435,39 @@ GetVersionInformation() {
 
   else # the file doesn't exist, create it...
     # Gather core version information...
-    read -r -a core_versions <<< "$(pihole -v -p)"
-    core_version=$(echo "${core_versions[3]}" | tr -d '\r\n[:alpha:]')
-    core_version_latest=${core_versions[5]//)}
+    IFS=$'\n' read -r -d '' -a latest_versions < <(pihole -up --check-only && printf '\0')
 
-    if [[ "${core_version_latest}" == "ERROR" ]]; then
-      core_version_latest=${core_version}
-      core_version_heatmap=${yellow_text}
+    read -r -a core_versions <<< "$(pihole -v -p)"
+    core_version=$(echo "${core_versions[4]%?}" | tr -d '\r\n[:alpha:]')
+
+    # is core up-to-date?
+    if [[ "${latest_versions[1]}" != *"up to date" ]]; then
+      out_of_date_flag="true"
+      core_version_heatmap=${red_text}
     else
-      core_version_latest=$(echo "${core_version_latest}" | tr -d '\r\n[:alpha:]')
-      # is core up-to-date?
-      if [[ "${core_version}" != "${core_version_latest}" ]]; then
-        out_of_date_flag="true"
-        core_version_heatmap=${red_text}
-      else
-        core_version_heatmap=${green_text}
-      fi
+      core_version_heatmap=${green_text}
     fi
 
     # Gather web version information...
     read -r -a web_versions <<< "$(pihole -v -a)"
-    web_version=$(echo "${web_versions[3]}" | tr -d '\r\n[:alpha:]')
-    web_version_latest=${web_versions[5]//)}
-    if [[ "${web_version_latest}" == "ERROR" ]]; then
-      web_version_latest=${web_version}
-      web_version_heatmap=${yellow_text}
+    web_version=$(echo "${web_versions[4]%?}" | tr -d '\r\n[:alpha:]')
+    # is web up-to-date?
+    if [[ "${latest_versions[2]}" != *"up to date" ]]; then
+      out_of_date_flag="true"
+      web_version_heatmap=${red_text}
     else
-      web_version_latest=$(echo "${web_version_latest}" | tr -d '\r\n[:alpha:]')
-      # is web up-to-date?
-      if [[ "${web_version}" != "${web_version_latest}" ]]; then
-        out_of_date_flag="true"
-        web_version_heatmap=${red_text}
-      else
-        web_version_heatmap=${green_text}
-      fi
+      web_version_heatmap=${green_text}
     fi
 
     # Gather FTL version information...
     read -r -a ftl_versions <<< "$(pihole -v -f)"
-    ftl_version=$(echo "${ftl_versions[3]}" | tr -d '\r\n[:alpha:]')
-    ftl_version_latest=${ftl_versions[5]//)}
-    if [[ "${ftl_version_latest}" == "ERROR" ]]; then
-      ftl_version_latest=${ftl_version}
-      ftl_version_heatmap=${yellow_text}
+    ftl_version=$(echo "${ftl_versions[4]%?}" | tr -d '\r\n[:alpha:]')
+    # is ftl up-to-date?
+    if [[ "${latest_versions[3]}" != *"up to date" ]]; then
+      out_of_date_flag="true"
+      ftl_version_heatmap=${red_text}
     else
-      ftl_version_latest=$(echo "${ftl_version_latest}" | tr -d '\r\n[:alpha:]')
-      # is ftl up-to-date?
-      if [[ "${ftl_version}" != "${ftl_version_latest}" ]]; then
-        out_of_date_flag="true"
-        ftl_version_heatmap=${red_text}
-      else
-        ftl_version_heatmap=${green_text}
-      fi
+      ftl_version_heatmap=${green_text}
     fi
 
     # PADD version information...
@@ -1069,7 +1050,7 @@ NormalPADD() {
     PrintPiholeStats ${padd_size}
     PrintNetworkInformation ${padd_size}
     PrintSystemInformation ${padd_size}
-    
+
     # Clear to end of screen (below the drawn dashboard)
     tput ed
 
